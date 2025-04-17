@@ -21,8 +21,8 @@ jobs:
       - name: 📦 Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install flake8 semgrep pytest requests  # Ensure all necessary tools are installed
+          pip install -r requirements.txt  # Ensure your requirements.txt is present and includes the dependencies.
+          pip install flake8 semgrep pytest requests  # Explicit installation of necessary tools
 
   unit_tests:
     runs-on: ubuntu-latest
@@ -30,7 +30,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run unit tests
-        run: pytest myapp/test_routes.py
+        run: |
+          echo "Running unit tests"
+          pytest myapp/test_routes.py
 
   trufflehog_secrets:
     runs-on: ubuntu-latest
@@ -48,7 +50,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run Semgrep SAST
-        run: semgrep scan --config auto .
+        run: |
+          echo "Running Semgrep SAST"
+          semgrep scan --config auto .
 
   lint:
     runs-on: ubuntu-latest
@@ -56,7 +60,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Lint code
-        run: flake8 myapp
+        run: |
+          echo "Running flake8"
+          flake8 myapp
 
   integration_tests:
     runs-on: ubuntu-latest
@@ -64,7 +70,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run integration tests
-        run: pytest myapp/test_integration.py
+        run: |
+          echo "Running integration tests"
+          pytest myapp/test_integration.py
 
   e2e_tests:
     runs-on: ubuntu-latest
@@ -72,7 +80,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run E2E tests
-        run: pytest myapp/test_e2e.py
+        run: |
+          echo "Running E2E tests"
+          pytest myapp/test_e2e.py
 
   containerize:
     runs-on: ubuntu-latest
