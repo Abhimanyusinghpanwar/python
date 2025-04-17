@@ -18,11 +18,20 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: 📦 Install dependencies
+      - name: 📦 Create Virtual Environment and Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt  # Ensure your requirements.txt is present and includes the dependencies.
-          pip install flake8 semgrep pytest requests  # Explicit installation of necessary tools
+          python -m venv venv  # Create a virtual environment
+          source venv/bin/activate  # Activate the virtual environment
+          python -m pip install --upgrade pip  # Upgrade pip
+          pip install -r requirements.txt  # Install dependencies from requirements.txt
+          pip install flake8 semgrep pytest requests  # Ensure pytest is installed
+
+      - name: Verify pytest installation
+        run: |
+          source venv/bin/activate  # Activate the virtual environment
+          echo "Verifying pytest installation"
+          pip show pytest  # Show pytest details
+          pytest --version  # Ensure pytest is installed
 
   unit_tests:
     runs-on: ubuntu-latest
@@ -31,6 +40,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run unit tests
         run: |
+          source venv/bin/activate  # Activate the virtual environment
           echo "Running unit tests"
           pytest myapp/test_routes.py
 
@@ -51,6 +61,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run Semgrep SAST
         run: |
+          source venv/bin/activate  # Activate the virtual environment
           echo "Running Semgrep SAST"
           semgrep scan --config auto .
 
@@ -61,6 +72,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Lint code
         run: |
+          source venv/bin/activate  # Activate the virtual environment
           echo "Running flake8"
           flake8 myapp
 
@@ -71,6 +83,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run integration tests
         run: |
+          source venv/bin/activate  # Activate the virtual environment
           echo "Running integration tests"
           pytest myapp/test_integration.py
 
@@ -81,6 +94,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run E2E tests
         run: |
+          source venv/bin/activate  # Activate the virtual environment
           echo "Running E2E tests"
           pytest myapp/test_e2e.py
 
