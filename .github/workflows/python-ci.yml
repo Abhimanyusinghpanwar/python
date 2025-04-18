@@ -145,7 +145,7 @@ jobs:
         run: trivy image flask-starter-app -f json -o trivy-report.json --severity HIGH,CRITICAL
 
       - name: Upload Trivy Report
-        uses: actions/upload-artifact@d3c9e2a75d4d2eabffb79f8ab23d2fc167ed044e
+        uses: actions/upload-artifact@v3.1.3
         with:
           name: trivy-report
           path: trivy-report.json
