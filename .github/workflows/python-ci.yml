@@ -142,10 +142,11 @@ jobs:
         run: docker build -t flask-starter-app .
 
       - name: Scan Image with Trivy
+        echo: "Running Trivy scan on flask-starter-app"
         run: trivy image flask-starter-app -f json -o trivy-report.json --severity HIGH,CRITICAL
 
-      - name: Upload Trivy Report
-        uses: actions/upload-artifact@v1
-        with:
-          name: trivy-report
-          path: trivy-report.json
+      # - name: Upload Trivy Report
+      #   uses: actions/upload-artifact@v1
+      #   with:
+      #     name: trivy-report
+      #     path: trivy-report.json
