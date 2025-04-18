@@ -1,20 +1,47 @@
+"""Tests for the Python Flask app."""
+import json
 import pytest
-from main import app
-
+from app import app
+ 
+ 
 @pytest.fixture
-def client():
-    with app.test_client() as client:
-        yield client
-
-def test_health_check(client):
-    res = client.get('/health')
-    assert res.status_code == 200
-    assert res.json['status'] == 'healthy'
-    assert res.content_type == 'application/json'
-
-def test_greet(client):
-    name = 'Abhimanyu'
-    res = client.get(f'/greet/{name}')
-    assert res.status_code == 200
-    assert res.json['message'] == f'Hello, {name}! Welcome to Flask starter app.'
-    assert res.content_type == 'application/json'
+def client():  # pylint: disable=redefined-outer-name
+    """Create a test client for the app."""
+    app.config['TESTING'] = True
+    with app.test_client() as test_client:
+        yield test_client
+ 
+ 
+def test_hello_world_route(client):  # pylint: disable=redefined-outer-name
+    """Test the hello_world route returns the expected response."""
+    response = client.get('/')
+ 
+    # Check status code
+    assert response.status_code == 200
+ 
+    # Parse response data
+    data = json.loads(response.data.decode('utf-8'))
+ 
+    # Check response structure
+    assert 'message' in data
+    assert 'status' in data
+ 
+    # Check response content
+    assert data['message'] == 'Python Flask App created by Optimum IDP!'
+    assert data['status'] == 'success'
+ 
+ 
+def test_health_check_route(client):  # pylint: disable=redefined-outer-name
+    """Test the health_check route returns a healthy status."""
+    response = client.get('/health')
+ 
+    # Check status code
+    assert response.status_code == 200
+ 
+    # Parse response data
+    data = json.loads(response.data.decode('utf-8'))
+ 
+    # Check response structure and content
+    assert 'status' in data
+    assert data['status'] == 'healthy'
+ 
