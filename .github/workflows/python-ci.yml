@@ -12,12 +12,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: 🐍 Set up Python
+      - name:  Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: 🔧 Install Dependencies and Run Unit Tests
+      - name:  Install Dependencies and Run Unit Tests
         run: |
           python -m venv venv
           source venv/bin/activate
@@ -25,7 +25,7 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
           echo "Running unit tests"
-          pytest myapp/test_routes.py
+          pytest test/test_unit.py
 
   trufflehog_secrets:
     runs-on: ubuntu-latest
@@ -70,7 +70,7 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           pip install flake8
-          flake8 myapp
+          flake8 test
 
   integration_tests:
     runs-on: ubuntu-latest

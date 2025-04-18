@@ -44,4 +44,3 @@ def test_health_check_route(client):  # pylint: disable=redefined-outer-name
     # Check response structure and content
     assert 'status' in data
     assert data['status'] == 'healthy'
- 
