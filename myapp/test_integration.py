@@ -11,14 +11,14 @@ def test_app():
 
 def test_hello_world_logging(caplog, test_app):
     """Test the hello_world route with logging."""
-    with caplog.at_level(logging.DEBUG):
+    with caplog.at_level(logging.INFO):
         res = test_app.get('/')
         assert res.status_code == 200
-        assert 'Hello World endpoint called' in caplog.text
+        assert 'Python Flask App created by Optimum IDP' in caplog.text
 
 def test_health_route_logging(caplog, test_app):
     """Test the /health route with logging."""
-    with caplog.at_level(logging.DEBUG):
+    with caplog.at_level(logging.INFO):
         res = test_app.get('/health')
         assert res.status_code == 200
-        assert 'Health check endpoint called' in caplog.text
+        assert 'Health check endpoint was called' in caplog.text
