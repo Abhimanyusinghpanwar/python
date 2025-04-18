@@ -7,48 +7,31 @@ on:
     branches: [ master ]
 
 jobs:
-  setup:
+  unit_tests:
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: 🐍 Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: 📦 Create Virtual Environment and Install Dependencies
+      - name: 🔧 Install Dependencies and Run Unit Tests
         run: |
-          python -m venv venv  # Create a virtual environment
-          source venv/bin/activate  # Activate the virtual environment
-          python -m pip install --upgrade pip  # Upgrade pip
-          pip install -r requirements.txt  # Install dependencies from requirements.txt
-          pip install flake8 semgrep pytest requests  # Ensure pytest is installed
-
-      - name: Verify pytest installation
-        run: |
-          source venv/bin/activate  # Activate the virtual environment
-          echo "Verifying pytest installation"
-          pip show pytest  # Show pytest details
-          pytest --version  # Ensure pytest is installed
-
-  unit_tests:
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run unit tests
-        run: |
-          source venv/bin/activate  # Activate the virtual environment
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
           echo "Running unit tests"
           pytest myapp/test_routes.py
 
   trufflehog_secrets:
     runs-on: ubuntu-latest
-    needs: setup
     steps:
       - uses: actions/checkout@v3
+
       - name: Run TruffleHog
         run: |
           curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
@@ -56,53 +39,82 @@ jobs:
 
   semgrep_sast:
     runs-on: ubuntu-latest
-    needs: setup
     steps:
       - uses: actions/checkout@v3
-      - name: Run Semgrep SAST
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run Semgrep
         run: |
-          source venv/bin/activate  # Activate the virtual environment
+          python -m venv venv
+          source venv/bin/activate
+          pip install semgrep
           echo "Running Semgrep SAST"
           semgrep scan --config auto .
 
   lint:
     runs-on: ubuntu-latest
-    needs: setup
     steps:
       - uses: actions/checkout@v3
-      - name: Lint code
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run Flake8 Linter
         run: |
-          source venv/bin/activate  # Activate the virtual environment
-          echo "Running flake8"
+          python -m venv venv
+          source venv/bin/activate
+          pip install flake8
           flake8 myapp
 
   integration_tests:
     runs-on: ubuntu-latest
-    needs: setup
     steps:
       - uses: actions/checkout@v3
-      - name: Run integration tests
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run Integration Tests
         run: |
-          source venv/bin/activate  # Activate the virtual environment
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+          pip install pytest
           echo "Running integration tests"
           pytest myapp/test_integration.py
 
   e2e_tests:
     runs-on: ubuntu-latest
-    needs: setup
     steps:
       - uses: actions/checkout@v3
-      - name: Run E2E tests
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run E2E Tests
         run: |
-          source venv/bin/activate  # Activate the virtual environment
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+          pip install pytest
           echo "Running E2E tests"
           pytest myapp/test_e2e.py
 
   containerize:
     runs-on: ubuntu-latest
-    needs: setup
     steps:
       - uses: actions/checkout@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -114,7 +126,8 @@ jobs:
     needs: containerize
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Docker
+
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
       - name: Install Trivy
