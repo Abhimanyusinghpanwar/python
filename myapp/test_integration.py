@@ -1,6 +1,6 @@
 import logging
 import pytest
-from main import app
+from app import app
 
 @pytest.fixture
 def test_app():
