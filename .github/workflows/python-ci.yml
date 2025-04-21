@@ -27,6 +27,13 @@ jobs:
           echo "Running unit tests"
           pytest test/test_unit.py
 
+      - name: Upload Gitleaks report
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.json
+        if: always()
+
   trufflehog_secrets:
     runs-on: ubuntu-latest
     steps:
@@ -35,7 +42,14 @@ jobs:
       - name: Run TruffleHog
         run: |
           curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
-          trufflehog filesystem .
+          trufflehog filesystem . > trufflehog-report.json
+
+      - name: Upload TruffleHog Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trufflehog-report
+          path: trufflehog-report.json
+        if: always()
 
   semgrep_sast:
     runs-on: ubuntu-latest
@@ -53,7 +67,14 @@ jobs:
           source venv/bin/activate
           pip install semgrep
           echo "Running Semgrep SAST"
-          semgrep scan --config auto .
+          semgrep scan --config auto . > semgrep-report.json
+
+      - name: Upload Semgrep Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep-report.json
+        if: always()
 
   lint:
     runs-on: ubuntu-latest
@@ -70,7 +91,14 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           pip install flake8
-          flake8 test
+          flake8 test --output-file=flake8-report.json
+
+      - name: Upload Flake8 Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: flake8-report
+          path: flake8-report.json
+        if: always()
 
   integration_tests:
     runs-on: ubuntu-latest
@@ -89,7 +117,14 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
           echo "Running integration tests"
-          pytest myapp/test_integration.py
+          pytest myapp/test_integration.py > integration-tests-report.json
+
+      - name: Upload Integration Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-tests-report
+          path: integration-tests-report.json
+        if: always()
 
   e2e_tests:
     runs-on: ubuntu-latest
@@ -108,7 +143,14 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
           echo "Running E2E tests"
-          pytest myapp/test_e2e.py
+          pytest myapp/test_e2e.py > e2e-tests-report.json
+
+      - name: Upload E2E Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-tests-report
+          path: e2e-tests-report.json
+        if: always()
 
   containerize:
     runs-on: ubuntu-latest
@@ -138,15 +180,61 @@ jobs:
           tar zxvf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
           sudo mv trivy /usr/local/bin/
 
-      - name: Build Docker Image
-        run: docker build -t flask-starter-app .
-
       - name: Run Trivy Scan and Save Report
         run: |
           echo "Running Trivy scan on flask-starter-app..."
           trivy image flask-starter-app --severity HIGH,CRITICAL --no-progress -f json -o trivy-report.json
 
-      - name: Show Trivy Report in Logs
+      - name: Upload Trivy Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
+        if: always()
+
+  generate_dashboard:
+    runs-on: ubuntu-latest
+    needs: [unit_tests, trufflehog_secrets, semgrep_sast, lint, integration_tests, e2e_tests, containerize, trivy_scan]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download all reports
+        uses: actions/download-artifact@v4
+        with:
+          name: trufflehog-report
+      - name: Download TruffleHog Report
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-report
+      - name: Download Flake8 Report
+        uses: actions/download-artifact@v4
+        with:
+          name: flake8-report
+      - name: Download Integration Test Report
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-tests-report
+      - name: Download E2E Test Report
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-tests-report
+
+      - name: Generate Summary Dashboard
         run: |
-          echo "Displaying Trivy Scan Report:"
-          cat trivy-report.json
+          echo "### Scan Reports" > dashboard.md
+          echo "#### TruffleHog Report" >> dashboard.md
+          cat trufflehog-report.json >> dashboard.md
+          echo "#### Trivy Report" >> dashboard.md
+          cat trivy-report.json >> dashboard.md
+          echo "#### Flake8 Report" >> dashboard.md
+          cat flake8-report.json >> dashboard.md
+          echo "#### Integration Test Report" >> dashboard.md
+          cat integration-tests-report.json >> dashboard.md
+          echo "#### E2E Test Report" >> dashboard.md
+          cat e2e-tests-report.json >> dashboard.md
+
+      - name: Upload Dashboard as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-report
+          path: dashboard.md
