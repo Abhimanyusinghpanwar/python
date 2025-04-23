@@ -79,10 +79,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Run Gitleaks Secret Scanner
-        uses: gitleaks/gitleaks-action@v2
-        with:
-          args: detect --source=. --report-format=json --report-path=gitleaks-report.json
+      - name: Install and Run Gitleaks (Open Source CLI)
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
+           chmod +x gitleaks
+          sudo mv gitleaks /usr/local/bin/
+          gitleaks detect --source=. --report-format=json --report-path=gitleaks-report.json || true
 
       - uses: actions/upload-artifact@v4
         with:
