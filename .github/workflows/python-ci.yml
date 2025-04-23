@@ -131,6 +131,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      - name: Rebuild Docker Image Locally
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          tags: flask-starter-app:latest
+          load: true  # Makes image available to Trivy locally
+          push: false 
+
       - name: Install Trivy
         run: |
           sudo apt update
