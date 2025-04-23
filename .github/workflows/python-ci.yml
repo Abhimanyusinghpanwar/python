@@ -41,6 +41,9 @@ jobs:
           python -m venv venv
           source venv/bin/activate
           pip install flake8 pylint coverage
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest  # Install explicitly
           flake8 myapp > flake8-report.txt || true
           pylint myapp > pylint-report.txt || true
           coverage run -m pytest
@@ -147,14 +150,6 @@ jobs:
           wget https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
           tar zxvf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
           sudo mv trivy /usr/local/bin/
-
-      - name: Docker Troubleshooting Steps
-        run: |
-          echo "==== Checking Docker daemon and images ===="
-          sudo docker info || echo "Docker daemon not running or permission denied"
-          sudo docker images || echo "No images found, make sure build step completed"
-          echo "==== Inspecting flask-starter-app:latest ===="
-          sudo docker image inspect flask-starter-app:latest || echo "Image not found: flask-starter-app:latest"
 
       - name: Run Trivy Scan
         run: |
