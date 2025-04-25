@@ -28,6 +28,7 @@ jobs:
 
   lint_and_coverage:
     runs-on: ubuntu-latest
+    needs: unit_tests
     steps:
       - uses: actions/checkout@v3
 
@@ -40,10 +41,8 @@ jobs:
         run: |
           python -m venv venv
           source venv/bin/activate
-          pip install flake8 pylint coverage
-          pip install --upgrade pip
+          pip install flake8 pylint coverage pytest
           pip install -r requirements.txt
-          pip install pytest  # Install explicitly
           flake8 myapp > flake8-report.txt || true
           pylint myapp > pylint-report.txt || true
           coverage run -m pytest
@@ -61,6 +60,7 @@ jobs:
 
   trufflehog_secrets:
     runs-on: ubuntu-latest
+    needs: lint_and_coverage
     steps:
       - uses: actions/checkout@v3
 
@@ -76,13 +76,14 @@ jobs:
 
   gitleaks:
     runs-on: ubuntu-latest
+    needs: trufflehog_secrets
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install and Run Gitleaks (Open Source CLI)
+      - name: Install and Run Gitleaks
         run: |
           curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
-           chmod +x gitleaks
+          chmod +x gitleaks
           sudo mv gitleaks /usr/local/bin/
           gitleaks detect --source=. --report-format=json --report-path=gitleaks-report.json || true
 
@@ -91,8 +92,45 @@ jobs:
           name: gitleaks-report
           path: gitleaks-report.json
 
+  integration_tests:
+    runs-on: ubuntu-latest
+    needs: gitleaks
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run Integration Tests
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt pytest
+          pytest myapp/test_integration.py
+
+  e2e_tests:
+    runs-on: ubuntu-latest
+    needs: integration_tests
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run E2E Tests
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt pytest
+          pytest myapp/test_e2e.py
+
   semgrep_sast:
     runs-on: ubuntu-latest
+    needs: e2e_tests
     steps:
       - uses: actions/checkout@v3
 
@@ -115,6 +153,7 @@ jobs:
 
   containerize:
     runs-on: ubuntu-latest
+    needs: semgrep_sast
     steps:
       - uses: actions/checkout@v3
 
@@ -130,19 +169,18 @@ jobs:
     runs-on: ubuntu-latest
     needs: containerize
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Rebuild Docker Image Locally
+      - name: Rebuild Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           tags: flask-starter-app:latest
-          load: true  # Makes image available to Trivy locally
-          push: false 
+          load: true
+          push: false
 
       - name: Install Trivy
         run: |
@@ -155,7 +193,7 @@ jobs:
 
       - name: Run Trivy Scan
         run: |
-          sudo trivy image flask-starter-app:latest --severity HIGH,CRITICAL --no-progress -f json -o trivy-report.json || echo "Trivy scan failed"
+          trivy image flask-starter-app:latest --severity HIGH,CRITICAL --no-progress -f json -o trivy-report.json || echo "Trivy scan failed"
 
       - uses: actions/upload-artifact@v4
         with:
